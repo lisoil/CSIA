@@ -1,0 +1,30 @@
+{% extends 'base.html' %}
+
+{% block header %}
+    <h1>{% block title %}Tasks{% endblock %}</h1>
+    {% if g.user %}
+        <a class="action" href="{{ url_for('tasks.submit') }}">New</a>
+    {% endif %}
+{% endblock %}
+
+{% block content %}
+    {% for task in tasks %}
+        <article class="task">
+            <header>
+                <div>
+                    <h1>{{ task['task_name'] }}</h1>
+                    <div class="about">by {{ task['requester_name'] }} on {{ task['time_submitted'].strftime('%Y-%m-%d %H:%M:%S') }}</div>
+                </div>
+                {% if g.user['user_id'] == task['requester_id'] %}
+                    <a class="action" href="{{ url_for('tasks.update', task_id=task['task_id']) }}">Edit</a>
+                {% endif %}
+
+            </header>
+            <p class="description">{{ task['description']}}</p>
+            <p class="extra-notes">{{ task['extra_notes'] }}</p>
+        </article>
+        {% if not loop.last %}
+            <hr>
+        {% endif %}
+    {% endfor %}
+{% endblock %}

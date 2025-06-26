@@ -1,0 +1,27 @@
+{% extends 'base.html' %}
+
+{% block header %}
+  <h1>{% block title %}Edit "{{ task.get('task_name', '') }}"{% endblock %}</h1>
+{% endblock %}
+
+{% block content %}
+  <form method="post">
+    <label for="task_name">Name</label>
+    <input name="task_name" id="task_name"
+      value="{{ request.form.get('task_name', task.get('task_name', '')) }}" required>
+      
+    <label for="description">Description</label>
+    <textarea name="description" id="description">{{ request.form.get('description', task.get('description', '')) }}</textarea>
+    
+    <label for="extra_notes">Extra Notes</label>
+    <textarea name="extra_notes" id="extra_notes">{{ request.form.get('extra_notes', task.get('extra_notes', '')) }}</textarea>
+    
+    <input type="submit" value="Save">
+  </form>
+  
+  <hr>
+  
+  <form action="{{ url_for('tasks.delete', task_id=task.get('task_id')) }}" method="post">
+    <input class="danger" type="submit" value="Delete" onclick="return confirm('Are you sure?');">
+  </form>
+{% endblock %}

@@ -29,7 +29,7 @@ def init_db():
 @click.command('init-db') # defines command line command that calls function and shows success message
 def init_db_command():
     # Clear existing data and create new tables
-    init_db
+    init_db()
     click.echo('Initialized the database.')
 
 sqlite3.register_converter( # Tell python how to interpret timestamp values in database

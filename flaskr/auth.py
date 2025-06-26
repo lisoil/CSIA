@@ -1,4 +1,6 @@
 import functools
+import sqlite3
+
 
 from flask import (
     Blueprint, flash, g, redirect, render_template, request, session, url_for
@@ -17,7 +19,7 @@ def register():
         password = request.form['password']
         region = request.form['region']
         location = request.form['location']
-        db = get_db
+        db = get_db()
         error = None
 
         if not name:
@@ -31,14 +33,22 @@ def register():
 
         if error is None:
             try:
+                # Insert into user table
                 db.execute(
                     "INSERT INTO user (name, password) VALUES (?, ?)",
                     (name, generate_password_hash(password))
                 )
+                # Get the user_id of the newly inserted user
+                user_id = db.execute(
+                    "SELECT user_id FROM user WHERE name = ?", (name,)
+                ).fetchone()['user_id']
+
+                # Insert into requester table with the user_id
                 db.execute(
-                    "INSERT INTO requester (region, location) VALUES (?, ?)",
-                    (region, location)
+                    "INSERT INTO requester (user_id, region, location) VALUES (?, ?, ?)",
+                    (user_id, region, location)
                 )
+                db.commit() 
             except db.IntegrityError:
                 error = f"User {name} is already registered."
             else:
@@ -66,7 +76,7 @@ def login():
 
         if error is None:
             session.clear()
-            session['user_id'] = user['id']
+            session['user_id'] = user['user_id']
             return redirect(url_for('index'))
         
         flash(error)
@@ -81,7 +91,7 @@ def load_logged_in_user():
         g.user = None
     else:
         g.user = get_db().execute(
-            'SELECT * FROM user WHERE id = ?', (user_id), 
+            'SELECT * FROM user WHERE user_id = ?', (user_id,),
         ).fetchone()
 
 @bp.route('/logout')
