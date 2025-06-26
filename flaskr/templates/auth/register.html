@@ -1,0 +1,23 @@
+{% extends 'base.html' %}
+
+{% block header %}
+    <h1>{% block title %}Register{% endblock %}</h1>
+{% endblock %}
+
+{% block content %}
+    <form method="post">
+        <label for="name">Username</label>
+        <input name="name" id="name" required>
+        <label for="password">Password</label>
+        <input type="password" name="password" id="password" required>
+        <label for="region">Region</label>
+
+        <label for="region1">Region 1</label>
+        <input type="radio" id="region1" name="region" value="Region 1">
+        <label for="region2">Region 2</label>
+        <input type="radio" id="region2" name="region" value="Region 2">        
+
+        <input type="submit" value="Register">
+    </form>
+{% endblock %}
+
