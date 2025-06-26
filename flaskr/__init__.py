@@ -1,6 +1,6 @@
 import os
 
-from flask import Flask
+from flask import Flask, render_template
 
 def create_app(test_config=None):
     app = Flask(__name__, instance_relative_config=True)
@@ -35,5 +35,9 @@ def create_app(test_config=None):
     @app.route('/hello')
     def hello():
         return "Hello, World!"
-    
+
+    @app.errorhandler(404)
+    def page_not_found(e):
+        return render_template('404.html'), 404
+   
     return app

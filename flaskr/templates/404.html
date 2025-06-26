@@ -1,0 +1,10 @@
+{% extends 'base.html' %}
+
+{% block header %}
+  <h1>{% block title %}404 - Page Not Found{% endblock %}</h1>
+{% endblock %}
+
+{% block content %}
+  <p>Sorry, the page you are looking for does not exist because I suck at coding :))</p>
+  <p><a href="{{ url_for('tasks.index') }}">Return to Home</a></p>
+{% endblock %}
