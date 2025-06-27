@@ -3,15 +3,15 @@
 <link rel="stylesheet" href="{{ url_for('static', filename='style.css')}}">
 <nav>
     <h1>Flaskr<h1>
-    <u1>
+    <ul>
         {% if g.user %}
-            <li><span>{{ g.user['username'] }}</span></li>
+            <li><span>{{ g.user['name'] }}</span></li>
             <li><a href="{{ url_for('auth.logout') }}">Log Out</a></li>
         {% else %}
             <li><a href="{{ url_for('auth.register') }}">Register</a></li>
             <li><a href="{{ url_for('auth.login') }}">Log In</a></li>
         {% endif %}
-    </u1>
+    </u>
 </nav>
 <section class="content">
     <header>
