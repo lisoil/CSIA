@@ -9,20 +9,19 @@
 
 {% block content %}
     {% for task in tasks %}
-        {% if g.user['user_id'] == task['requester_id'] %}
-            <article class="task">
-                <h1 title="{{ task['task_name'] }}">{{ task['task_name'] }}</h1>
-                <span class="about" title="by {{ task['requester_name'] }} on {{ task['time_submitted'].strftime('%Y-%m-%d %H:%M:%S') }}">
-                    By {{ task['requester_name'] }} on {{ task['time_submitted'].strftime('%Y-%m-%d %H:%M:%S') }}
-                </span>
-                <span class="description" title="{{ task['description'] }}">{{ task['description'] }}</span>
-                <span class="extra-notes" title="{{ task['extra_notes'] }}">{{ task['extra_notes'] }}</span>
+        <article class="task">
+            <h1 title="{{ task['task_name'] }}">{{ task['task_name'] }}</h1>
+            <span class="about">
+                By {{ task['requester_name'] }} on {{ task['time_submitted'].strftime('%Y-%m-%d %H:%M:%S') }}
+            </span>
+            <span class="description">{{ task['description'] }}</span>
+            <span class="extra-notes">{{ task['extra_notes'] }}</span>
 
-                {% if g.user['user_id'] == task['requester_id'] %}
-                    <a class="action" href="{{ url_for('tasks.update', task_id=task['task_id']) }}">Edit</a>
-                {% endif %}
-            </article>
-        {% endif %}
+            {% if not is_certifier %}
+                <a class="action" href="{{ url_for('tasks.update', task_id=task['task_id']) }}">Edit</a>
+            {% endif %}
+        </article>
+
         
         {# {% if not loop.last %}
             <hr>

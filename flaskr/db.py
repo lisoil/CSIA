@@ -4,6 +4,8 @@ from datetime import datetime
 import click
 from flask import current_app, g 
 
+from werkzeug.security import generate_password_hash
+
 def get_db():
     if 'db' not in g:
         g.db = sqlite3.connect(
@@ -26,6 +28,21 @@ def init_db():
     with current_app.open_resource('schema.sql') as f:
         db.executescript(f.read().decode('utf8'))
 
+    db.execute(
+        'INSERT INTO user (name, password) VALUES (?, ?)',
+        ('certifier1', generate_password_hash('certifier1password'))
+    )
+    user_id = db.execute(
+        'SELECT user_id FROM user WHERE name = ?', ('certifier1',)
+    ).fetchone()['user_id']
+    db.execute(
+        'INSERT INTO certifier (user_id) VALUES (?)',
+        (user_id)
+    )
+
+    db.commit()
+
+
 @click.command('init-db') # defines command line command that calls function and shows success message
 def init_db_command():
     # Clear existing data and create new tables
@@ -39,3 +56,6 @@ sqlite3.register_converter( # Tell python how to interpret timestamp values in d
 def init_app(app):
     app.teardown_appcontext(close_db) # tells Flask to call function when cleaning up after returning response
     app.cli.add_command(init_db_command) # adds new ocmmand that can be called with flask command
+
+
+
