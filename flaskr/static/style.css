@@ -1,17 +1,22 @@
+:root {
+  --main-font-family: "Nunito Sans";
+  --bg-color: #eee;
+}
+
 html {
-  font-family: sans-serif;
-  background: #eee;
+  font-family: var(--main-font-family), sans-serif;
+  background: var(--bg-color);
   padding: 1rem;
 }
 
 body {
-  max-width: 960px;
+  /* max-width: 960px; */
   margin: 0 auto;
   background: white;
 }
 
 h1 {
-  font-family: serif;
+  font-family: var(--main-font-family), serif;
   color: #377ba8;
   margin: 1rem 0;
 }
@@ -57,6 +62,10 @@ header .action {
   list-style-type: none;
 }
 
+#new-task {
+  color: green;
+}
+
 .content {
   padding: 0 1rem 1rem;
 }
@@ -79,29 +88,40 @@ header .action {
   border: 1px solid #377ba8;
 }
 
-/* .task > header {
-  display: flex;
-  align-items: flex-end;
-  font-size: 0.85em;
-}
-
-.task > header > div:first-of-type {
-  flex: auto;
-}
-
-.task > header h1 {
-  font-size: 1.5em;
+.content:last-child {
   margin-bottom: 0;
 }
 
-.task .about {
-  color: slategray;
-  font-style: italic;
+.content form {
+  margin: 1em 0;
+  display: flex;
+  flex-direction: column;
 }
 
-.task .body {
-  white-space: pre-line;
-} */
+.content label {
+  font-weight: bold;
+  margin-bottom: 0.5em;
+}
+
+.content input,
+.content textarea {
+  margin-bottom: 1em;
+}
+
+.content textarea {
+  /* min-height: 12em; */
+  resize: vertical;
+}
+
+input.danger {
+  color: #cc2f2e;
+}
+
+input[type="submit"] {
+  align-self: start;
+  /* min-width: 10em; */
+}
+
 
 .task {
   display: flex;
@@ -109,8 +129,8 @@ header .action {
   gap: 1rem;
   padding: 0.5rem 0;
   border-bottom: 1px solid #ddd;
-  flex-wrap: nowrap; /* keep everything on one line */
-  overflow: hidden; /* hide overflow */
+  flex-wrap: nowrap; 
+  overflow: hidden; 
 }
 
 .task h1,
@@ -124,7 +144,7 @@ header .action {
 
 .task h1 {
   font-size: 1.1em;
-  flex: 1 1 15%; /* grow and shrink, start basis 15% */
+  flex: 1 1 15%; 
   min-width: 100px;
 }
 
@@ -153,36 +173,37 @@ header .action {
   flex: 0 0 auto; /* don't grow or shrink */
 }
 
-.content:last-child {
-  margin-bottom: 0;
-}
-
-.content form {
-  margin: 1em 0;
+.submit-task {
   display: flex;
-  flex-direction: column;
+  align-items: center;
 }
 
-.content label {
-  font-weight: bold;
-  margin-bottom: 0.5em;
+.submit-task form {
+  width: stretch;
 }
 
-.content input,
-.content textarea {
-  margin-bottom: 1em;
+.submit-task-wrapper {
+  display: flex;
+  flex-direction: row;
+  gap: 10px;
+  align-items: center;
+  padding: 0.5rem 0;
 }
 
-.content textarea {
-  min-height: 12em;
-  resize: vertical;
+.submit-task-wrapper input::placeholder,
+.submit-task-wrapper textarea::placeholder,
+.submit-task-wrapper input[type="submit"] {
+  font-family: var(--main-font-family), serif;
 }
 
-input.danger {
-  color: #cc2f2e;
+.submit-task-wrapper input, 
+.submit-task-wrapper textarea {
+  flex-grow: 2;
+  min-height: 2rem;
 }
 
-input[type="submit"] {
-  align-self: start;
-  min-width: 10em;
+.submit-task-wrapper input[type="submit"] {
+  flex-grow: 0;
+  height: 2rem;
+  min-width: 2rem;
 }

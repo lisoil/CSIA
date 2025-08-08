@@ -3,28 +3,47 @@
 {% block header %}
     <h1>{% block title %}Tasks{% endblock %}</h1>
     {% if g.user %}
-        <a class="action" href="{{ url_for('tasks.submit') }}">New</a>
+        <a class="action" id="new-task" href="{{ url_for('tasks.submit') }}">New</a>
     {% endif %}
 {% endblock %}
 
 {% block content %}
     {% for task in tasks %}
-        <article class="task">
-            <h1 title="{{ task['task_name'] }}">{{ task['task_name'] }}</h1>
-            <span class="about" title="by {{ task['requester_name'] }} on {{ task['time_submitted'].strftime('%Y-%m-%d %H:%M:%S') }}">
-                By {{ task['requester_name'] }} on {{ task['time_submitted'].strftime('%Y-%m-%d %H:%M:%S') }}
-            </span>
-            <span class="description" title="{{ task['description'] }}">{{ task['description'] }}</span>
-            <span class="extra-notes" title="{{ task['extra_notes'] }}">{{ task['extra_notes'] }}</span>
+        {% if g.user['user_id'] == task['requester_id'] %}
+            <article class="task">
+                <h1 title="{{ task['task_name'] }}">{{ task['task_name'] }}</h1>
+                <span class="about" title="by {{ task['requester_name'] }} on {{ task['time_submitted'].strftime('%Y-%m-%d %H:%M:%S') }}">
+                    By {{ task['requester_name'] }} on {{ task['time_submitted'].strftime('%Y-%m-%d %H:%M:%S') }}
+                </span>
+                <span class="description" title="{{ task['description'] }}">{{ task['description'] }}</span>
+                <span class="extra-notes" title="{{ task['extra_notes'] }}">{{ task['extra_notes'] }}</span>
 
-            {% if g.user['user_id'] == task['requester_id'] %}
-                <a class="action" href="{{ url_for('tasks.update', task_id=task['task_id']) }}">Edit</a>
-            {% endif %}
-        </article>
-        
-        {% if not loop.last %}
-            <hr>
+                {% if g.user['user_id'] == task['requester_id'] %}
+                    <a class="action" href="{{ url_for('tasks.update', task_id=task['task_id']) }}">Edit</a>
+                {% endif %}
+            </article>
         {% endif %}
+        
+        {# {% if not loop.last %}
+            <hr>
+        {% endif %} #}
     {% endfor %}
+
+    <div class="submit-task">
+        <form method="post">
+            <div class="submit-task-wrapper">
+                {# <label for="task_name">Name</label> #}
+                <input name="task_name" id="task_name" value="{{ request.form.get('task_name', '') }}" placeholder="Task Title" required>
+
+                {# <label for="description">Description</label> #}
+                <textarea name="description" id="description" placeholder="Description">{{ request.form.get('description', '') }}</textarea>
+
+                {# <label for="extra_notes">Extra Notes</label> #}
+                <textarea name="extra_notes" id="extra_notes" placeholder="Extra Notes">{{ request.form.get('extra_notes', '') }}</textarea>
+
+                <input type="submit" value="Save">
+            </div>
+        </form>
+    </div>
     
 {% endblock %}
