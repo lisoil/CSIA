@@ -1,8 +1,13 @@
 {% extends 'base.html' %}
 
 {% block header %}
-    <h1>{% block title %}Tasks{% endblock %}</h1>
-    {% if g.user %}
+    <h1>{% block title %}
+        Tasks | 
+        {% if region > 0 %}Region {{region}}
+        {% else %}Certifier
+        {% endif %}
+     {% endblock %}</h1>
+    {% if g.user and not is_certifier %}
         <a class="action" id="new-task" href="{{ url_for('tasks.submit') }}">New</a>
     {% endif %}
 {% endblock %}
@@ -18,31 +23,89 @@
             <span class="extra-notes">{{ task['extra_notes'] }}</span>
 
             {% if not is_certifier %}
-                <a class="action" href="{{ url_for('tasks.update', task_id=task['task_id']) }}">Edit</a>
+                <a class="action-edit" href="{{ url_for('tasks.update', task_id=task['task_id']) }}">✎</a>           
+            {% else %}
+                <div class="action-box">
+                    <form method="post" action="{{ url_for('tasks.complete_task', task_id=task['task_id']) }}">
+                        <button type="submit" class="action-complete">☑</button>
+                    </form>
+
+                    <form method="post" action="{{ url_for('tasks.reject_task', task_id=task['task_id']) }}">
+                        <button type="submit" class="action-reject">☒</button>
+                    </form>
+                </div>   
             {% endif %}
         </article>
-
-        
-        {# {% if not loop.last %}
-            <hr>
-        {% endif %} #}
     {% endfor %}
 
-    <div class="submit-task">
-        <form method="post">
-            <div class="submit-task-wrapper">
-                {# <label for="task_name">Name</label> #}
-                <input name="task_name" id="task_name" value="{{ request.form.get('task_name', '') }}" placeholder="Task Title" required>
+    {# {% if not is_certifier%}
+        <div class="submit-task">
+            <form method="post">
+                <div class="submit-task-wrapper">
+                    <input name="task_name" id="task_name" value="{{ request.form.get('task_name', '') }}" placeholder="Task Title" required>
+                    <textarea name="description" id="description" placeholder="Description">{{ request.form.get('description', '') }}</textarea>
+                    <textarea name="extra_notes" id="extra_notes" placeholder="Extra Notes">{{ request.form.get('extra_notes', '') }}</textarea>
 
-                {# <label for="description">Description</label> #}
-                <textarea name="description" id="description" placeholder="Description">{{ request.form.get('description', '') }}</textarea>
+                    <input type="submit" value="Save">
+                </div>
+            </form>
+        </div>
+    {% endif %} #}
 
-                {# <label for="extra_notes">Extra Notes</label> #}
-                <textarea name="extra_notes" id="extra_notes" placeholder="Extra Notes">{{ request.form.get('extra_notes', '') }}</textarea>
-
-                <input type="submit" value="Save">
+    {% if is_certifier %}
+        <div class="slots-container">
+            <div class="region1-slots">
+                <button class="slots-button-minus" onclick="updateSlots(1, 'decrement')">−</button>
+                <h2>R1 Slots:</h2>
+                <p id="region1-slots-left">{{ region1_slots_left }}</p>
+                <button class="slots-button-plus" onclick="updateSlots(1, 'increment')">+</button>
             </div>
-        </form>
-    </div>
-    
+            <div class="region2-slots">
+                <button class="slots-button-minus" onclick="updateSlots(2, 'decrement')">−</button>
+                <h2>R2 Slots:</h2>
+                <p id="region2-slots-left">{{ region2_slots_left }}</p>
+                <button class="slots-button-plus" onclick="updateSlots(2, 'increment')">+</button>
+            </div>
+        </div>
+
+    {% else %}
+        <div class="slots-container">
+            <div class="region1-slots">
+                <h2>R{{region}} slots:</h2>
+                <p id="region{{region}}-slots-left">
+                    {% if region == 1 %}{{ region1_slots_left }}
+                    {% elif region == 2 %}{{ region2_slots_left }}
+                    {% endif %}
+                </p>
+            </div>
+        </div>
+
+    {% endif %}    
+
+    <script>
+    async function updateSlots(region, action) {
+        const response = await fetch(`/slots/${region}/${action}`, {
+            method: 'POST'
+        });
+        const data = await response.json();
+        document.getElementById(`region${region}-slots-left`).textContent = data.slots_left;
+    }
+
+    async function refreshSlots(region) {
+        const response = await fetch(`/slots/${region}/get`);
+        const data = await response.json();
+        document.getElementById(`region${region}-slots-left`).textContent = data.slots_left;
+    }
+
+    // Refresh every 5 minutes
+    setInterval(() => {
+        refreshSlots(1);
+        refreshSlots(2);
+    }, 300000); // 300000ms = 5 minutes
+
+    // Initial refresh on page load
+    refreshSlots(1);
+    refreshSlots(2);
+    </script>
+
 {% endblock %}

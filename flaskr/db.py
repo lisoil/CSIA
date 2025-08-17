@@ -37,7 +37,7 @@ def init_db():
     ).fetchone()['user_id']
     db.execute(
         'INSERT INTO certifier (user_id) VALUES (?)',
-        (user_id)
+        (user_id,)
     )
 
     db.commit()

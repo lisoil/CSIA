@@ -1,6 +1,10 @@
 :root {
-  --main-font-family: "Nunito Sans";
-  --bg-color: #eee;
+  --main-font-family: "Inter";
+  --bg-color: white;
+  /* --bg-color: #f6f4f4; */
+  --secondary-bg-color: rgb(227, 224, 224);
+  /* --accent-color: #377ba8; */
+  --accent-color: black;
 }
 
 html {
@@ -17,12 +21,19 @@ body {
 
 h1 {
   font-family: var(--main-font-family), serif;
-  color: #377ba8;
+  color: var(--accent-color);
+  margin: 1rem 0;
+}
+
+h2 {
+  font-family: var(--main-font-family), serif;
+  color: var(--accent-color);
+  font-size: medium;
   margin: 1rem 0;
 }
 
 a {
-  color: #377ba8;
+  color: var(--accent-color);
 }
 
 hr {
@@ -31,10 +42,10 @@ hr {
 }
 
 nav {
-  background: lightgray;
+  background: var(--secondary-bg-color);
   display: flex;
   align-items: center;
-  padding: 0 0.5rem;
+  padding: 0.5rem 1rem;
 }
 
 nav h1 {
@@ -62,6 +73,10 @@ header .action {
   list-style-type: none;
 }
 
+header h1 {
+  padding: 0.1rem 0;
+}
+
 #new-task {
   color: green;
 }
@@ -85,7 +100,7 @@ header .action {
   margin: 1em 0;
   padding: 1em;
   background: #cae6f6;
-  border: 1px solid #377ba8;
+  border: 1px solid var(--accent-color);
 }
 
 .content:last-child {
@@ -121,7 +136,6 @@ input[type="submit"] {
   align-self: start;
   /* min-width: 10em; */
 }
-
 
 .task {
   display: flex;
@@ -167,10 +181,27 @@ input[type="submit"] {
   color: gray;
 }
 
-.task .action {
+.task .action-edit, .action-box {
   margin-left: auto; /* push edit button to the far right */
   white-space: nowrap;
   flex: 0 0 auto; /* don't grow or shrink */
+}
+
+.action-box {
+  display: flex;
+  flex-direction: row;
+}
+
+.action-complete, .action-reject {
+  color: green;
+  cursor: pointer;
+  background: transparent;
+  border: none !important;
+  padding: none;
+}
+
+.action-reject {
+  color: red;
 }
 
 .submit-task {
@@ -206,4 +237,52 @@ input[type="submit"] {
   flex-grow: 0;
   height: 2rem;
   min-width: 2rem;
+}
+
+.slots-container {
+  display: flex;
+  flex-direction: row;
+  gap: 10px;
+  justify-content: space-between;
+  margin-top: 10px;
+}
+
+.region1-slots, .region2-slots{
+  border: 1px solid;
+  border-radius: 50px;
+  border-color: lightgrey;
+  padding: 5px 15px; /*top right bottom left, top right+left bottom, top+bottom right+left*/
+  display: flex;
+  flex-direction: row;
+  gap: 10px;
+  align-items: center;
+}
+
+.slots-button-minus, .slots-button-plus {
+  background-color: white;
+  width: 40px;
+  height: 40px;
+  border: 1px solid;
+  border-color: green;
+  border-radius: 20px;
+  font-size: x-large;
+  font-weight: 100;
+  color: green;
+
+  cursor: pointer;
+}
+
+.slots-button-minus {
+  border-color: red;
+  color: red;
+}
+
+.slots-button-plus:hover {
+  background-color: green;
+  color: white;
+}
+
+.slots-button-minus:hover {
+  background-color: red;
+  color: white;
 }

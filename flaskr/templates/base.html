@@ -1,13 +1,13 @@
 <!DOCTYPE html>
-<title>{% block title %}{% endblock %} - Flaskr</title>
+<title>{% block title %}{% endblock %} - CSIA</title>
 <link rel="stylesheet" href="{{ url_for('static', filename='style.css')}}">
 
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Nunito+Sans:ital,opsz,wght@0,6..12,200..1000;1,6..12,200..1000&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Inter:ital,opsz,wght@0,14..32,100..900;1,14..32,100..900&family=Nunito+Sans:ital,opsz,wght@0,6..12,200..1000;1,6..12,200..1000&display=swap" rel="stylesheet">
 
 <nav>
-    <h1>Flaskr<h1>
+    <h1>CSIA</h1>
     <ul>
         {% if g.user %}
             <li><span>{{ g.user['name'] }}</span></li>
@@ -16,7 +16,7 @@
             <li><a href="{{ url_for('auth.register') }}">Register</a></li>
             <li><a href="{{ url_for('auth.login') }}">Log In</a></li>
         {% endif %}
-    </u>
+    </ul>
 </nav>
 <section class="content">
     <header>
