@@ -181,10 +181,40 @@ input[type="submit"] {
   color: gray;
 }
 
+.task-completed {
+  background: #f0f0f0;
+  color: #555;
+  font-style: italic;
+  opacity: 0.7;
+}
+
+.task-rejected {
+  background: #fdf0f0;
+  color: #a33;
+  font-style: italic;
+  opacity: 0.7;
+}
+
+.task-active {
+  background: #fff;
+  color: #000;
+}
+
 .task .action-edit, .action-box {
   margin-left: auto; /* push edit button to the far right */
   white-space: nowrap;
   flex: 0 0 auto; /* don't grow or shrink */
+}
+
+.task-status-label {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+}
+
+.task-status-label p {
+  font-size: small;
+  padding-right: 5px;
 }
 
 .action-box {
@@ -192,7 +222,7 @@ input[type="submit"] {
   flex-direction: row;
 }
 
-.action-complete, .action-reject {
+.action-complete, .action-reject, .action-reactivate {
   color: green;
   cursor: pointer;
   background: transparent;

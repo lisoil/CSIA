@@ -101,6 +101,12 @@ def index():
             FROM tasks t
             JOIN requester r ON t.requester_id = r.requester_id
             JOIN user ru ON r.user_id = ru.user_id
+            WHERE 
+                -- Always include active tasks
+                t.status = 'active'
+                OR
+                -- Only include inactive tasks from today
+                (t.status != 'active' AND DATE(t.time_submitted) = DATE('now', 'localtime'))
             ORDER BY t.time_submitted DESC
             '''
         ).fetchall()
@@ -113,8 +119,14 @@ def index():
             JOIN requester r ON t.requester_id = r.requester_id
             JOIN user ru ON r.user_id = ru.user_id
             WHERE r.user_id = ?
+            AND (
+                t.status = 'active'
+                OR
+                (t.status != 'active' AND DATE(t.time_submitted) = DATE('now', 'localtime'))
+            )
             ORDER BY t.time_submitted DESC
             ''',
+
             (g.user['user_id'],)
         ).fetchall()
 
@@ -191,7 +203,7 @@ def get_task(task_id, check_author=True):
         t.description,
         t.extra_notes,                
         t.time_completed,
-        t.status_active,
+        t.status,
         ru.name AS requester_name,
         cu.name AS certifier_name,
         t.requester_id
@@ -208,7 +220,14 @@ def get_task(task_id, check_author=True):
     if task is None:
         abort(404, f"Task id {task_id} doesn't exist.")
 
-    if check_author and task['requester_id'] != g.user['user_id']:
+    db = get_db()
+
+    requester_id = db.execute(
+    'SELECT requester_id FROM requester WHERE user_id = ?',
+    (g.user['user_id'],)
+    ).fetchone()['requester_id']
+
+    if check_author and task['requester_id'] != requester_id:
         abort(403)
 
     return task
@@ -217,6 +236,8 @@ def get_task(task_id, check_author=True):
 @login_required
 def update(task_id):
     task = get_task(task_id)
+
+    rejected = task['status'] == 'rejected'
 
     if request.method == 'POST':
         task_name = request.form['task_name']
@@ -235,10 +256,26 @@ def update(task_id):
                 'UPDATE tasks SET task_name = ?, description = ?, extra_notes = ? WHERE task_id = ?',
                 (task_name, description, extra_notes, task_id)
             )
+
+            if rejected:
+                db.execute(
+                    "UPDATE tasks SET status = 'active' WHERE task_id = ?",
+                    (task_id,)
+                )
+
+                region = db.execute(
+                    'SELECT region FROM requester WHERE requester_id = ?',
+                    (task['requester_id'],)
+                ).fetchone()['region']
+                db.execute(
+                    "UPDATE slots SET slots_left = slots_left - 1, last_updated = ? WHERE region = ?",
+                    (datetime.datetime.utcnow(), region)
+                )
+
             db.commit()
             return redirect(url_for('tasks.index'))
         
-    return render_template('tasks/update.html', task=task)
+    return render_template('tasks/update.html', task=task, rejected=rejected)
 
 @bp.route('/<int:task_id>/delete', methods=('POST',))
 @login_required
@@ -264,12 +301,70 @@ def complete_task(task_id):
 @login_required
 def reject_task(task_id):
     db = get_db()
+
+    task = db.execute(
+        '''
+        SELECT r.region
+        FROM tasks t
+        JOIN requester r ON t.requester_id = r.requester_id
+        WHERE t.task_id = ?
+        ''',
+        (task_id,)
+    ).fetchone()
+
+    if not task:
+        flash("Task not found.")
+        return redirect(url_for('tasks.index'))
+    
+    region = task['region']
+
     db.execute(
         "UPDATE tasks SET status = 'rejected' WHERE task_id = ?",
         (task_id,)
     )
+    
+    db.execute(
+        "UPDATE slots SET slots_left = slots_left + 1, last_updated = ? WHERE region = ?",
+        (datetime.datetime.utcnow(), region)
+    )
+
     db.commit()
     return redirect(url_for('tasks.index'))
+
+@bp.route('/<int:task_id>/reactivate', methods=['POST'])
+@login_required
+def reactivate_task(task_id):
+    db = get_db()
+
+    task = db.execute(
+        '''
+        SELECT t.task_id, r.region
+        FROM tasks t
+        JOIN requester r ON t.requester_id = r.requester_id
+        WHERE t.task_id = ?
+        ''',
+        (task_id,)
+    ).fetchone()
+
+    if not task:
+        flash("Task not found.")
+        return redirect(url_for("tasks.index"))
+    
+    region = task['region']
+
+    db.execute(
+        "UPDATE tasks SET status = 'active' WHERE task_id = ?",
+        (task_id,)
+    )
+
+    db.execute(
+        "UPDATE slots SET slots_left = slots_left - 1, last_updated = ? WHERE region = ?",
+        (datetime.datetime.utcnow(), region)
+    )
+
+    db.commit()
+    # flash("Task reactivated.")
+    return redirect(url_for("tasks.index"))
 
 @bp.route('/slots/<int:region>/<string:action>', methods=['POST'])
 def update_slots(region, action):
