@@ -97,7 +97,7 @@ def index():
         # Certifier gets all tasks
         tasks = db.execute(
             '''
-            SELECT t.*, r.user_id AS requester_id, ru.name AS requester_name
+            SELECT t.*, r.user_id AS requester_id, ru.name AS requester_name, r.region
             FROM tasks t
             JOIN requester r ON t.requester_id = r.requester_id
             JOIN user ru ON r.user_id = ru.user_id
@@ -114,7 +114,7 @@ def index():
         # Requester only gets their own tasks
         tasks = db.execute(
             '''
-            SELECT t.*, r.user_id AS requester_id, ru.name AS requester_name
+            SELECT t.*, r.user_id AS requester_id, ru.name AS requester_name, r.region
             FROM tasks t
             JOIN requester r ON t.requester_id = r.requester_id
             JOIN user ru ON r.user_id = ru.user_id

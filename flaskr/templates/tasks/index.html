@@ -17,7 +17,7 @@
         <article class="task task-{{ task['status'] }}">
             <h1 title="{{ task['task_name'] }}">{{ task['task_name'] }}</h1>
             <span class="about">
-                By {{ task['requester_name'] }} on {{ task['time_submitted'].strftime('%Y-%m-%d %H:%M:%S') }}
+                By {{ task['requester_name'] }} in R{{ task['region'] }} on {{ task['time_submitted'].strftime('%H:%M') }} {# %Y-%m-%d %H:%M:%S #}
             </span>
             <span class="description">{{ task['description'] }}</span>
             <span class="extra-notes">{{ task['extra_notes'] }}</span>
