@@ -121,6 +121,13 @@
     // Initial refresh on page load
     refreshSlots(1);
     refreshSlots(2);
+
+    {% if is_certifier %}
+        setInterval(() => {
+        window.location.reload();
+        }, 60000);
+    {% endif %}
+
     </script>
 
 {% endblock %}

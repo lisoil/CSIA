@@ -107,6 +107,8 @@ def index():
                 OR
                 -- Only include inactive tasks from today
                 (t.status != 'active' AND DATE(t.time_submitted) = DATE('now', 'localtime'))
+                OR 
+                (t.status = 'completed' AND DATE(t.time_completed) = DATE('now', 'localtime'))
             ORDER BY t.time_submitted DESC
             '''
         ).fetchall()
