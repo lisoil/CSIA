@@ -98,36 +98,9 @@
     {% endif %}    
 
     <script>
-    async function updateSlots(region, action) {
-        const response = await fetch(`/slots/${region}/${action}`, {
-            method: 'POST'
-        });
-        const data = await response.json();
-        document.getElementById(`region${region}-slots-left`).textContent = data.slots_left;
-    }
-
-    async function refreshSlots(region) {
-        const response = await fetch(`/slots/${region}/get`);
-        const data = await response.json();
-        document.getElementById(`region${region}-slots-left`).textContent = data.slots_left;
-    }
-
-    // Refresh every 5 minutes
-    setInterval(() => {
-        refreshSlots(1);
-        refreshSlots(2);
-    }, 300000); // 300000ms = 5 minutes
-
-    // Initial refresh on page load
-    refreshSlots(1);
-    refreshSlots(2);
-
-    {% if is_certifier %}
-        setInterval(() => {
-        window.location.reload();
-        }, 60000);
-    {% endif %}
-
+        window.is_certifier = {{ 'true' if is_certifier else 'false' }};
     </script>
+    <script src="{{ url_for('static', filename='index.js') }}"></script>
+
 
 {% endblock %}
