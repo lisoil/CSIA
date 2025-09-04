@@ -150,7 +150,7 @@ input[type="submit"] {
 .task h1,
 .task .about,
 .task .description,
-.task .extra-notes {
+.task .project-number {
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -174,7 +174,7 @@ input[type="submit"] {
   min-width: 200px;
 }
 
-.task .extra-notes {
+.task .project-number {
   flex: 1 1 20%;
   min-width: 150px;
   font-style: italic;

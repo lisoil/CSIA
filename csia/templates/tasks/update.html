@@ -13,8 +13,8 @@
     <label for="description">Description</label>
     <textarea name="description" id="description">{{ request.form.get('description', task['description']) }}</textarea>
     
-    <label for="extra_notes">Extra Notes</label>
-    <textarea name="extra_notes" id="extra_notes">{{ request.form.get('extra_notes', task['extra_notes']) }}</textarea>
+    <label for="project_number">Project Number</label>
+    <textarea name="project_number" id="project_number">{{ request.form.get('project_number', task['project_number']) }}</textarea>
     
     <input type="submit" value="{% if rejected %}Resubmit{% else %}Save{% endif %}">
   </form>

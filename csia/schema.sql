@@ -31,7 +31,7 @@ CREATE TABLE tasks (
     time_completed TIMESTAMP DEFAULT CURRENT_TIMESTAMP, 
     task_name TEXT NOT NULL, 
     description TEXT, 
-    extra_notes TEXT, 
+    project_number TEXT, 
     status TEXT DEFAULT "active", 
     FOREIGN KEY (requester_id) REFERENCES requester(requester_id),
     FOREIGN KEY (certifier_id) REFERENCES certifier(certifier_id)

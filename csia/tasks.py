@@ -3,8 +3,8 @@ from flask import (
 )
 from werkzeug.exceptions import abort
 
-from flaskr.auth import login_required
-from flaskr.db import get_db
+from csia.auth import login_required
+from csia.db import get_db
 
 from werkzeug.security import generate_password_hash
 
@@ -159,7 +159,7 @@ def submit():
     if request.method == 'POST':
         task_name = request.form['task_name']
         description = request.form['description']
-        extra_notes = request.form['extra_notes']
+        project_number = request.form['project_number']
         error = None
 
         if slots_left <= 0:
@@ -184,8 +184,8 @@ def submit():
             requester_id = requester_row['requester_id']
 
             db.execute(
-                'INSERT INTO tasks (task_name, description, extra_notes, requester_id, certifier_id) VALUES (?, ?, ?, ?, ?)',
-                (task_name, description, extra_notes, requester_id, 1)  # certifier_id=1 for now
+                'INSERT INTO tasks (task_name, description, project_number, requester_id, certifier_id) VALUES (?, ?, ?, ?, ?)',
+                (task_name, description, project_number, requester_id, 1)  # certifier_id=1 for now
             )
             db.execute(
                 'UPDATE slots SET slots_left = slots_left - 1, last_updated = ? WHERE region = ?',
@@ -203,7 +203,7 @@ def get_task(task_id, check_author=True):
         t.task_id,
         t.task_name,
         t.description,
-        t.extra_notes,                
+        t.project_number,                
         t.time_completed,
         t.status,
         ru.name AS requester_name,
@@ -244,7 +244,7 @@ def update(task_id):
     if request.method == 'POST':
         task_name = request.form['task_name']
         description = request.form['description']
-        extra_notes = request.form['extra_notes']
+        project_number = request.form['project_number']
         error = None
 
         if not task_name:
@@ -255,8 +255,8 @@ def update(task_id):
         else:
             db = get_db()
             db.execute(
-                'UPDATE tasks SET task_name = ?, description = ?, extra_notes = ? WHERE task_id = ?',
-                (task_name, description, extra_notes, task_id)
+                'UPDATE tasks SET task_name = ?, description = ?, project_number = ? WHERE task_id = ?',
+                (task_name, description, project_number, task_id)
             )
 
             if rejected:
