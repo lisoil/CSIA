@@ -1,11 +1,15 @@
 {% extends 'base.html' %}
 
+{% block nav_title %}
+    | 
+    {% if region > 0 %}Region {{region}}
+    {% else %}Certifier
+    {% endif %}
+{% endblock %}
+
 {% block header %}
     <h1>{% block title %}
-        Tasks | 
-        {% if region > 0 %}Region {{region}}
-        {% else %}Certifier
-        {% endif %}
+        Tasks
      {% endblock %}</h1>
     {% if g.user and not is_certifier %}
         <a class="action" id="new-task" href="{{ url_for('tasks.submit') }}">New</a>
@@ -13,45 +17,21 @@
 {% endblock %}
 
 {% block content %}
-    {% for task in tasks %}
-        <article class="task task-{{ task['status'] }}">
-            <h1 title="{{ task['task_name'] }}">{{ task['task_name'] }}</h1>
-            <span class="about">
-                By {{ task['requester_name'] }} in R{{ task['region'] }} on {{ task['time_submitted'].strftime('%H:%M') }} {# %Y-%m-%d %H:%M:%S #}
-            </span>
-            <span class="description">{{ task['description'] }}</span>
-            <span class="project-number">{{ task['project-number'] }}</span>
+    {% if is_certifier %}
+        <h1 class="region-tasks-label">Region 1 Tasks</h1>
+        {% for task in tasks if task['region'] == 1 %}
+            {% include 'task_card.html' %}
+        {% endfor %}
 
-            {% if not is_certifier and task['status'] == 'active' %}
-                <a class="action-edit" href="{{ url_for('tasks.update', task_id=task['task_id']) }}">✎</a>    
-            {% elif is_certifier and task['status'] == 'active' %}
-                <div class="action-box">
-                    <form method="post" action="{{ url_for('tasks.complete_task', task_id=task['task_id']) }}">
-                        <button type="submit" class="action-complete">☑</button>
-                    </form>
-
-                    <form method="post" action="{{ url_for('tasks.reject_task', task_id=task['task_id']) }}">
-                        <button type="submit" class="action-reject">☒</button>
-                    </form>
-                </div>  
-            {% else %}
-                <div class="task-status-label">
-                    {% if task['status'] == 'completed' %}
-                        <p>Task completed</p>
-                    {% elif task['status'] == 'rejected' %}
-                        <p>Task rejected</p>
-                        {% if is_certifier %}
-                            <form method="post" action="{{ url_for('tasks.reactivate_task', task_id=task['task_id']) }}">
-                                <button type="submit" class="action-reactivate">⭮</button>
-                            </form>
-                        {% else %}
-                            <a class="action-edit" href="{{ url_for('tasks.update', task_id=task['task_id']) }}">✎</a>
-                        {% endif %}
-                    {% endif %}
-                </div>
-            {% endif %}
-        </article>
-    {% endfor %}
+        <h1 class="region-tasks-label">Region 2 Tasks</h1>
+        {% for task in tasks if task['region'] == 2 %}
+            {% include 'task_card.html' %}
+        {% endfor %}    
+    {% else %}
+        {% for task in tasks %}
+            {% include 'task_card.html' %}
+        {% endfor %}
+    {% endif %}
 
     {# {% if not is_certifier%}
         <div class="submit-task">
@@ -71,13 +51,13 @@
         <div class="slots-container">
             <div class="region1-slots">
                 <button class="slots-button-minus" onclick="updateSlots(1, 'decrement')">−</button>
-                <h2>R1 Slots:</h2>
+                <h2>Region 1 Slots:</h2>
                 <p id="region1-slots-left">{{ region1_slots_left }}</p>
                 <button class="slots-button-plus" onclick="updateSlots(1, 'increment')">+</button>
             </div>
             <div class="region2-slots">
                 <button class="slots-button-minus" onclick="updateSlots(2, 'decrement')">−</button>
-                <h2>R2 Slots:</h2>
+                <h2>Region 2 Slots:</h2>
                 <p id="region2-slots-left">{{ region2_slots_left }}</p>
                 <button class="slots-button-plus" onclick="updateSlots(2, 'increment')">+</button>
             </div>
@@ -86,7 +66,7 @@
     {% else %}
         <div class="slots-container">
             <div class="region1-slots">
-                <h2>R{{region}} slots:</h2>
+                <h2>Region {{region}} slots:</h2>
                 <p id="region{{region}}-slots-left">
                     {% if region == 1 %}{{ region1_slots_left }}
                     {% elif region == 2 %}{{ region2_slots_left }}

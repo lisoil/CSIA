@@ -137,11 +137,18 @@ input[type="submit"] {
   /* min-width: 10em; */
 }
 
+.region-tasks-label {
+  font-size: 1.2rem;
+  margin-bottom: 0;
+  border-bottom: 1px solid #ddd;
+  font-weight: bold;
+}
+
 .task {
   display: flex;
   align-items: center;
   gap: 1rem;
-  padding: 0.5rem 0;
+  padding: 0;
   border-bottom: 1px solid #ddd;
   flex-wrap: nowrap; 
   overflow: hidden; 
@@ -156,17 +163,18 @@ input[type="submit"] {
   text-overflow: ellipsis;
 }
 
-.task h1 {
-  font-size: 1.1em;
-  flex: 1 1 15%; 
-  min-width: 100px;
-}
-
-.task .about {
+.task h1, 
+.about,
+.project-number{
   font-size: 0.95em;
   flex: 1 1 20%;
   min-width: 150px;
   color: #555;
+}
+
+.task h1 {
+  flex: 1 1 15%; 
+  min-width: 100px;
 }
 
 .task .description {
@@ -177,8 +185,8 @@ input[type="submit"] {
 .task .project-number {
   flex: 1 1 20%;
   min-width: 150px;
-  font-style: italic;
-  color: gray;
+  /* font-style: italic; */
+  /* color: gray; */
 }
 
 .task-completed {

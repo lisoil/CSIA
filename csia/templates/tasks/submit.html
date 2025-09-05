@@ -6,14 +6,14 @@
 
 {% block content %}
   <form method="post">
-    <label for="task_name">Name</label>
+    <label for="task_name">Task Name</label>
     <input name="task_name" id="task_name" value="{{ request.form.get('task_name', '') }}" required>
 
     <label for="description">Description</label>
     <textarea name="description" id="description">{{ request.form.get('description', '') }}</textarea>
 
     <label for="project_number">Project Number</label>
-    <textarea name="project_number" id="project_number">{{ request.form.get('project_number', '') }}</textarea>
+    <input name="project_number" id="project_number" value="{{ request.form.get('project_number', '') }}">
 
     <input type="submit" value="Save">
   </form>

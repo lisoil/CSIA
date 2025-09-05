@@ -1,0 +1,37 @@
+<article class="task task-{{ task['status'] }}">
+    <h1 title="{{ task['task_name'] }}">{{ task['task_name'] }}</h1>
+    <span class="description">{{ task['description'] }}</span>
+    <span class="project-number">{{ task['project_number'] }}</span>
+    <span class="about">
+        By {{ task['requester_name'] }} on {{ task['time_submitted'].strftime('%H:%M %d.%m.%Y') }} {# %Y-%m-%d %H:%M:%S #}
+    </span>
+
+    {% if not is_certifier and task['status'] == 'active' %}
+        <a class="action-edit" href="{{ url_for('tasks.update', task_id=task['task_id']) }}">✎</a>    
+    {% elif is_certifier and task['status'] == 'active' %}
+        <div class="action-box">
+            <form method="post" action="{{ url_for('tasks.complete_task', task_id=task['task_id']) }}">
+                <button type="submit" class="action-complete">☑</button>
+            </form>
+
+            <form method="post" action="{{ url_for('tasks.reject_task', task_id=task['task_id']) }}">
+                <button type="submit" class="action-reject">☒</button>
+            </form>
+        </div>  
+    {% else %}
+        <div class="task-status-label">
+            {% if task['status'] == 'completed' %}
+                <p>Task completed</p>
+            {% elif task['status'] == 'rejected' %}
+                <p>Task rejected</p>
+                {% if is_certifier %}
+                    <form method="post" action="{{ url_for('tasks.reactivate_task', task_id=task['task_id']) }}">
+                        <button type="submit" class="action-reactivate">⭮</button>
+                    </form>
+                {% else %}
+                    <a class="action-edit" href="{{ url_for('tasks.update', task_id=task['task_id']) }}">✎</a>
+                {% endif %}
+            {% endif %}
+        </div>
+    {% endif %}
+</article>

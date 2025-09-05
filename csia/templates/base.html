@@ -7,7 +7,7 @@
 <link href="https://fonts.googleapis.com/css2?family=Inter:ital,opsz,wght@0,14..32,100..900;1,14..32,100..900&family=Nunito+Sans:ital,opsz,wght@0,6..12,200..1000;1,6..12,200..1000&display=swap" rel="stylesheet">
 
 <nav>
-    <h1>CSIA</h1>
+    <h1>CSIA {% block nav_title %}{% endblock%}</h1>
     <ul>
         {% if g.user %}
             <li><span>{{ g.user['name'] }}</span></li>
