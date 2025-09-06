@@ -24,6 +24,7 @@
                 <p>Task completed</p>
             {% elif task['status'] == 'rejected' %}
                 <p>Task rejected</p>
+            {% endif %}
                 {% if is_certifier %}
                     <form method="post" action="{{ url_for('tasks.reactivate_task', task_id=task['task_id']) }}">
                         <button type="submit" class="action-reactivate">⭮</button>
@@ -31,7 +32,6 @@
                 {% else %}
                     <a class="action-edit" href="{{ url_for('tasks.update', task_id=task['task_id']) }}">✎</a>
                 {% endif %}
-            {% endif %}
         </div>
     {% endif %}
 </article>

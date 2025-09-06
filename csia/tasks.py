@@ -102,13 +102,15 @@ def index():
             JOIN requester r ON t.requester_id = r.requester_id
             JOIN user ru ON r.user_id = ru.user_id
             WHERE 
-                -- Always include active tasks
+                -- Active tasks
                 t.status = 'active'
                 OR
-                -- Only include inactive tasks from today
+                -- Inactive tasks from today
                 (t.status != 'active' AND DATE(t.time_submitted) = DATE('now', 'localtime'))
                 OR 
                 (t.status = 'completed' AND DATE(t.time_completed) = DATE('now', 'localtime'))
+                OR 
+                (t.status = 'rejected' AND DATE(t.time_rejected) = DATE('now', 'localtime'))
             ORDER BY t.time_submitted DESC
             '''
         ).fetchall()
@@ -125,6 +127,10 @@ def index():
                 t.status = 'active'
                 OR
                 (t.status != 'active' AND DATE(t.time_submitted) = DATE('now', 'localtime'))
+                OR
+                (t.status = 'completed' AND DATE(t.time_completed) = DATE('now', 'localtime'))
+                OR 
+                (t.status = 'rejected' AND DATE(t.time_rejected) = DATE('now', 'localtime'))
             )
             ORDER BY t.time_submitted DESC
             ''',
@@ -163,10 +169,10 @@ def submit():
         error = None
 
         if slots_left <= 0:
-            error = f"No available slots in Region {region} left."
+            error = f"Sorry, no available slots in Region {region} left."
 
         if not task_name:
-            error = 'Name is required.'
+            error = 'Task name is required.'
 
         if error is not None:
             flash(error)
@@ -205,6 +211,7 @@ def get_task(task_id, check_author=True):
         t.description,
         t.project_number,                
         t.time_completed,
+        t.time_rejected,
         t.status,
         ru.name AS requester_name,
         cu.name AS certifier_name,
@@ -248,7 +255,7 @@ def update(task_id):
         error = None
 
         if not task_name:
-            error = "Task is required."
+            error = "Task name is required."
         
         if error is not None:
             flash(error)
@@ -261,7 +268,7 @@ def update(task_id):
 
             if rejected:
                 db.execute(
-                    "UPDATE tasks SET status = 'active' WHERE task_id = ?",
+                    "UPDATE tasks SET status = 'active', time_rejected = NULL WHERE task_id = ?",
                     (task_id,)
                 )
 
@@ -321,8 +328,8 @@ def reject_task(task_id):
     region = task['region']
 
     db.execute(
-        "UPDATE tasks SET status = 'rejected' WHERE task_id = ?",
-        (task_id,)
+        "UPDATE tasks SET status = 'rejected', time_rejected = ? WHERE task_id = ?",
+        (datetime.datetime.utcnow(), task_id,)
     )
     
     db.execute(
@@ -340,7 +347,7 @@ def reactivate_task(task_id):
 
     task = db.execute(
         '''
-        SELECT t.task_id, r.region
+        SELECT t.task_id, t.status, r.region
         FROM tasks t
         JOIN requester r ON t.requester_id = r.requester_id
         WHERE t.task_id = ?
@@ -353,11 +360,19 @@ def reactivate_task(task_id):
         return redirect(url_for("tasks.index"))
     
     region = task['region']
+    rejected = task['status'] == 'rejected'
+    completed = task['status'] == 'completed'
 
-    db.execute(
-        "UPDATE tasks SET status = 'active' WHERE task_id = ?",
-        (task_id,)
-    )
+    if rejected:
+        db.execute(
+            "UPDATE tasks SET status = 'active', time_rejected = NULL WHERE task_id = ?", 
+            (task_id,)
+        )
+    elif completed:
+        db.execute(
+            "UPDATE tasks SET status = 'active', time_completed = NULL WHERE task_id = ?", 
+            (task_id,)
+        )
 
     db.execute(
         "UPDATE slots SET slots_left = slots_left - 1, last_updated = ? WHERE region = ?",
