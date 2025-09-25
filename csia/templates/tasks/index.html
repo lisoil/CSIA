@@ -33,20 +33,6 @@
         {% endfor %}
     {% endif %}
 
-    {# {% if not is_certifier%}
-        <div class="submit-task">
-            <form method="post">
-                <div class="submit-task-wrapper">
-                    <input name="task_name" id="task_name" value="{{ request.form.get('task_name', '') }}" placeholder="Task Title" required>
-                    <textarea name="description" id="description" placeholder="Description">{{ request.form.get('description', '') }}</textarea>
-                    <textarea name="project-number" id="project-number" placeholder="Project Number">{{ request.form.get('project_number', '') }}</textarea>
-
-                    <input type="submit" value="Save">
-                </div>
-            </form>
-        </div>
-    {% endif %} #}
-
     {% if is_certifier %}
         <div class="slots-container">
             <div class="region1-slots">

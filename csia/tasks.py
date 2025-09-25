@@ -1,4 +1,4 @@
-import datetime
+from datetime import datetime, timezone
 
 from flask import (
     Blueprint,
@@ -21,7 +21,7 @@ bp = Blueprint("tasks", __name__)
 
 def get_slot_count(region: int) -> int:
     db = get_db()
-    now = datetime.datetime.utcnow()
+    now = datetime.now(timezone.utc)
 
     row = db.execute(
         "SELECT slots_left, last_updated FROM slots WHERE region = ?", (region,)
@@ -31,7 +31,7 @@ def get_slot_count(region: int) -> int:
         default_slots = 25 if region == 1 else 15
         db.execute(
             "INSERT INTO slots (region, slots_left, last_updated) VALUES (?, ?, ?)",
-            (region, default_slots, datetime.datetime.utcnow()),
+            (region, default_slots, datetime.now(timezone.utc)),
         )
         db.commit()
         return default_slots
@@ -86,10 +86,10 @@ def get_user_region():
     if not check_if_certifier():
         region = db.execute(
             """
-                SELECT region
-                FROM requester
-                WHERE user_id = ?
-                """,
+            SELECT region
+            FROM requester
+            WHERE user_id = ?
+            """,
             (g.user["user_id"],),
         ).fetchone()["region"]
 
@@ -213,7 +213,7 @@ def submit():
             )
             db.execute(
                 "UPDATE slots SET slots_left = slots_left - 1, last_updated = ? WHERE region = ?",
-                (datetime.datetime.utcnow(), region),
+                (datetime.now(timezone.utc), region),
             )
             db.commit()
             return redirect(url_for("tasks.index"))
@@ -301,7 +301,7 @@ def update(task_id):
                 ).fetchone()["region"]
                 db.execute(
                     "UPDATE slots SET slots_left = slots_left - 1, last_updated = ? WHERE region = ?",
-                    (datetime.datetime.utcnow(), region),
+                    (datetime.now(timezone.utc), region),
                 )
 
             db.commit()
@@ -326,7 +326,7 @@ def complete_task(task_id):
     db = get_db()
     db.execute(
         "UPDATE tasks SET status = 'completed', time_completed = ? WHERE task_id = ?",
-        (datetime.datetime.utcnow(), task_id),
+        (datetime.now(timezone.utc), task_id),
     )
     db.commit()
     return redirect(url_for("tasks.index"))
@@ -356,14 +356,14 @@ def reject_task(task_id):
     db.execute(
         "UPDATE tasks SET status = 'rejected', time_rejected = ? WHERE task_id = ?",
         (
-            datetime.datetime.utcnow(),
+            datetime.now(timezone.utc),
             task_id,
         ),
     )
 
     db.execute(
         "UPDATE slots SET slots_left = slots_left + 1, last_updated = ? WHERE region = ?",
-        (datetime.datetime.utcnow(), region),
+        (datetime.now(timezone.utc), region),
     )
 
     db.commit()
@@ -406,7 +406,7 @@ def reactivate_task(task_id):
 
     db.execute(
         "UPDATE slots SET slots_left = slots_left - 1, last_updated = ? WHERE region = ?",
-        (datetime.datetime.utcnow(), region),
+        (datetime.now(timezone.utc), region),
     )
 
     db.commit()
@@ -427,7 +427,7 @@ def update_slots(region, action):
 
     db.execute(
         "UPDATE slots SET slots_left = ?, last_updated = ? WHERE region = ?",
-        (slots_left, datetime.datetime.utcnow(), region),
+        (slots_left, datetime.now(timezone.utc), region),
     )
     db.commit()
 
