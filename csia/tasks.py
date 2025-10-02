@@ -38,6 +38,8 @@ def get_slot_count(region: int) -> int:
 
     slots_left = row["slots_left"]
     last_updated = row["last_updated"]
+    if last_updated is not None and last_updated.tzinfo is None:
+        last_updated = last_updated.replace(tzinfo=timezone.utc)
 
     if now.date() != last_updated.date():
         slots_left = 25 if region == 1 else 15
