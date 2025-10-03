@@ -34,11 +34,7 @@ def create_app(test_config=None):
 
     app.register_blueprint(tasks.bp)
     app.add_url_rule("/", endpoint="index")
-
-    @app.route("/hello")
-    def hello():
-        return "Hello, World!"
-
+    
     @app.errorhandler(404)
     def page_not_found(e):
         return render_template("404.html"), 404
