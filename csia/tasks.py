@@ -19,7 +19,97 @@ from csia.db import get_db
 bp = Blueprint("tasks", __name__)
 
 
-def get_slot_count(region: int) -> int:
+def check_if_certifier():
+    """
+    Checks if the current user is a certifier.
+    Returns True if certifier, False otherwise.
+    """
+    db = get_db()
+
+    is_certifier = (
+        db.execute(
+            "SELECT 1 FROM certifier WHERE user_id = ?", (g.user["user_id"],)
+        ).fetchone()
+        is not None
+    )
+
+    return is_certifier
+
+
+def get_user_region():
+    """
+    Retrieves the region of the current user.
+    Returns 0 for certifiers, or the requester's region.
+    """
+    db = get_db()
+    region = 0
+
+    if not check_if_certifier():
+        region = db.execute(
+            """
+            SELECT region
+            FROM requester
+            WHERE user_id = ?
+            """,
+            (g.user["user_id"],),
+        ).fetchone()["region"]
+
+    return region
+
+
+def get_task(task_id, check_author=True):
+    """
+    Retrieves a task by its ID.
+    If check_author is True, verifies that the current user is the requester of the task.
+    """
+    task = (
+        get_db()
+        .execute(
+            """
+            SELECT 
+                t.task_id,
+                t.task_name,
+                t.description,
+                t.project_number,                
+                t.time_completed,
+                t.time_rejected,
+                t.status,
+                ru.name AS requester_name,
+                cu.name AS certifier_name,
+                t.requester_id
+            FROM tasks t
+            JOIN requester r ON t.requester_id = r.requester_id
+            JOIN user ru ON r.user_id = ru.user_id
+            LEFT JOIN certifier c ON t.certifier_id = c.certifier_id
+            LEFT JOIN user cu ON c.user_id = cu.user_id
+            WHERE t.task_id = ?
+            """,
+            (task_id,),
+        )
+        .fetchone()
+    )
+
+    if task is None:
+        abort(404, f"Task id {task_id} doesn't exist.")
+
+    db = get_db()
+
+    requester_id = db.execute(
+        "SELECT requester_id FROM requester WHERE user_id = ?", (g.user["user_id"],)
+    ).fetchone()["requester_id"]
+
+    if check_author and task["requester_id"] != requester_id:
+        abort(403)
+
+    return task
+
+
+def get_slot_count(region):
+    """
+    Manages and retrieves the slot count for a given region.
+    Decrements slots based on 30-minute intervals since last update.
+    Resets slots daily to default values (25 for region 1, 15 for region 2).
+    """
     db = get_db()
     now = datetime.now(timezone.utc)
 
@@ -68,39 +158,13 @@ def get_slot_count(region: int) -> int:
     return slots_left
 
 
-def check_if_certifier():
-    db = get_db()
-
-    is_certifier = (
-        db.execute(
-            "SELECT 1 FROM certifier WHERE user_id = ?", (g.user["user_id"],)
-        ).fetchone()
-        is not None
-    )
-
-    return is_certifier
-
-
-def get_user_region():
-    db = get_db()
-    region = 0
-
-    if not check_if_certifier():
-        region = db.execute(
-            """
-            SELECT region
-            FROM requester
-            WHERE user_id = ?
-            """,
-            (g.user["user_id"],),
-        ).fetchone()["region"]
-
-    return region
-
-
 @bp.route("/")
 @login_required
 def index():
+    """
+    Displays a list of tasks.  Certifiers see all tasks; requesters see only their own.
+    Shows active tasks and those updated today.
+    """
     db = get_db()
 
     is_certifier = check_if_certifier()
@@ -167,6 +231,10 @@ def index():
 @bp.route("/submit", methods=("GET", "POST"))
 @login_required
 def submit():
+    """
+    Allows a requester to submit a new task, checking for available slots in their region.
+    Enters task details into the database if slots are available.
+    """
     db = get_db()
     region = get_user_region()
     slots_left = get_slot_count(region)
@@ -223,52 +291,13 @@ def submit():
     return render_template("tasks/submit.html")
 
 
-def get_task(task_id, check_author=True):
-    task = (
-        get_db()
-        .execute(
-            """
-            SELECT 
-                t.task_id,
-                t.task_name,
-                t.description,
-                t.project_number,                
-                t.time_completed,
-                t.time_rejected,
-                t.status,
-                ru.name AS requester_name,
-                cu.name AS certifier_name,
-                t.requester_id
-            FROM tasks t
-            JOIN requester r ON t.requester_id = r.requester_id
-            JOIN user ru ON r.user_id = ru.user_id
-            LEFT JOIN certifier c ON t.certifier_id = c.certifier_id
-            LEFT JOIN user cu ON c.user_id = cu.user_id
-            WHERE t.task_id = ?
-            """,
-            (task_id,),
-        )
-        .fetchone()
-    )
-
-    if task is None:
-        abort(404, f"Task id {task_id} doesn't exist.")
-
-    db = get_db()
-
-    requester_id = db.execute(
-        "SELECT requester_id FROM requester WHERE user_id = ?", (g.user["user_id"],)
-    ).fetchone()["requester_id"]
-
-    if check_author and task["requester_id"] != requester_id:
-        abort(403)
-
-    return task
-
-
 @bp.route("/<int:task_id>/update", methods=("GET", "POST"))
 @login_required
 def update(task_id):
+    """
+    Allows a requester to update an existing task.
+    If the task was previously rejected, updating it will reactivate the task and decrement the slot count for the requester's region.
+    """
     task = get_task(task_id)
 
     rejected = task["status"] == "rejected"
@@ -315,6 +344,9 @@ def update(task_id):
 @bp.route("/<int:task_id>/delete", methods=("POST",))
 @login_required
 def delete(task_id):
+    """
+    Deletes a task from the database by its ID.
+    """
     get_task(task_id)
     db = get_db()
     db.execute("DELETE FROM tasks WHERE task_id = ?", (task_id,))
@@ -325,6 +357,9 @@ def delete(task_id):
 @bp.route("/<int:task_id>/complete", methods=["POST"])
 @login_required
 def complete_task(task_id):
+    """
+    Marks a task as completed in the database by updating its status and completion time.
+    """
     db = get_db()
     db.execute(
         "UPDATE tasks SET status = 'completed', time_completed = ? WHERE task_id = ?",
@@ -337,6 +372,9 @@ def complete_task(task_id):
 @bp.route("/<int:task_id>/reject", methods=["POST"])
 @login_required
 def reject_task(task_id):
+    """
+    Marks a task as rejected in the database and increments the slot count for the requester's region.
+    """
     db = get_db()
 
     task = db.execute(
@@ -375,6 +413,10 @@ def reject_task(task_id):
 @bp.route("/<int:task_id>/reactivate", methods=["POST"])
 @login_required
 def reactivate_task(task_id):
+    """
+    Reactivates a rejected or completed task by updating its status as 'active' in the database.
+    Decrements the slot count for the requester's region.
+    """
     db = get_db()
 
     task = db.execute(
@@ -418,6 +460,10 @@ def reactivate_task(task_id):
 
 @bp.route("/slots/<int:region>/<string:action>", methods=["POST"])
 def update_slots(region, action):
+    """
+    Updates the slot count for a given region based on the specified action ('increment' or 'decrement') in the database.
+    Returns the updated slot count as JSON.
+    """
     db = get_db()
 
     slots_left = get_slot_count(region)
@@ -439,6 +485,9 @@ def update_slots(region, action):
 @bp.route("/slots/<int:region>/get", methods=["GET"])
 @login_required
 def get_slots(region):
+    """
+    Retrieves the current slot count for a given region.
+    """
     slots_left = get_slot_count(region)
     return jsonify({"slots_left": slots_left})
 

@@ -20,6 +20,9 @@ bp = Blueprint("auth", __name__, url_prefix="/auth")
 
 @bp.route("/register", methods=("GET", "POST"))
 def register():
+    """
+    Registers a new requester by adding entries to both the user and requester tables.
+    """
     if request.method == "POST":
         name = request.form["name"]
         password = request.form["password"]
@@ -67,6 +70,9 @@ def register():
 
 @bp.route("login", methods=("GET", "POST"))
 def login():
+    """
+    Logs in a registered user by checking with the database.
+    """
     if request.method == "POST":
         name = request.form["name"]
         password = request.form["password"]
@@ -91,6 +97,9 @@ def login():
 
 @bp.before_app_request
 def load_logged_in_user():
+    """
+    Loads the logged-in user's information from the database into 'g.user'.
+    """
     user_id = session.get("user_id")
 
     if user_id is None:
@@ -112,8 +121,12 @@ def logout():
     return redirect(url_for("index"))
 
 
-# For when things require user to be logged in
 def login_required(view):
+    """
+    Redirects to login page if user is not logged in.
+    For when things require user to be logged in.
+    """
+
     @functools.wraps(view)
     def wrapped_view(**kwargs):
         if g.user is None:

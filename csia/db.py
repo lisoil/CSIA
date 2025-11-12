@@ -25,6 +25,9 @@ def close_db(e=None):
 
 
 def init_db():
+    """
+    Initializes the database by creating tables and inserting a default certifier.
+    """
     db = get_db()
 
     with current_app.open_resource("schema.sql") as f:
