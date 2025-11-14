@@ -35,6 +35,28 @@ def check_if_certifier():
 
     return is_certifier
 
+def check_slots_exist(region):
+    """
+    Ensures that slot counts for the specified region exist in the database.
+    If not, initializes them to default values.
+    """
+    db = get_db()
+    now = datetime.now(timezone.utc)
+
+    row = db.execute(
+        "SELECT slots_left, last_updated FROM slots WHERE region = ?", (region,)
+    ).fetchone()
+
+    # If region slot counts are not initialized, set to default values
+    if row is None:
+        default_slots = 25 if region == 1 else 15
+        db.execute(
+            "INSERT INTO slots (region, slots_left, last_updated) VALUES (?, ?, ?)",
+            (region, default_slots, now),
+        )
+        db.commit()
+        return default_slots
+
 
 def get_user_region():
     """
@@ -55,6 +77,83 @@ def get_user_region():
         ).fetchone()["region"]
 
     return region
+
+    
+def get_last_updated(region):
+    """
+    Retrieves the last updated timestamp for the specified region slots from the database.
+    """
+    db = get_db()
+
+    last_updated = db.execute(
+        "SELECT last_updated FROM slots WHERE region = ?", (region,)
+    ).fetchone()['last_updated']
+
+    # Ensure last_updated is timezone-aware
+    if last_updated is not None and last_updated.tzinfo is None:
+        last_updated = last_updated.replace(tzinfo=timezone.utc)
+    
+    return last_updated
+
+    
+def update_slots_count(region, slots_left):
+    """
+    Decrements slots based on 30-minute intervals since last update.
+    Resets slots daily to default values (25 for region 1, 15 for region 2).
+    """
+    db = get_db()
+    now = datetime.now(timezone.utc)
+
+    last_updated = get_last_updated(region)
+
+    # Reset slots daily
+    if now.date() != last_updated.date(): # If the date has changed since last update
+        slots_left = 25 if region == 1 else 15
+        db.execute(
+            "UPDATE slots SET slots_left = ?, last_updated = ? WHERE region = ?",
+            (slots_left, now, region),
+        )
+        db.commit()
+        return slots_left
+
+    # Calculate how many 30-minute intervals have passed, if the date is the same 
+    interval_minutes = 30
+
+    delta_minutes = (now - last_updated).total_seconds() // 60
+    decrements = int(delta_minutes // interval_minutes)
+
+    # If intervals have passed, decrement slots accordingly
+    if decrements > 0:
+        slots_left = max(0, slots_left - decrements)
+        db.execute(
+            "UPDATE slots SET slots_left = ?, last_updated = ? WHERE region = ?",
+            (slots_left, now, region),
+        )
+        db.commit()
+        print(f"Decremented slots by {decrements}.")
+
+    return slots_left
+
+
+def get_slot_count(region):
+    """
+    Retrieves the slot count for a given region.
+    """
+    db = get_db()
+    
+    check_slots_exist(region)
+
+    # Retrieve current slots
+    row = db.execute(
+        "SELECT slots_left, last_updated FROM slots WHERE region = ?", (region,)
+    ).fetchone()
+
+    slots_left = row["slots_left"]
+
+    # Update slots based on time elapsed
+    slots_left = update_slots_count(region, slots_left)
+
+    return slots_left
 
 
 def get_task(task_id, check_author=True):
@@ -89,11 +188,13 @@ def get_task(task_id, check_author=True):
         .fetchone()
     )
 
+    # Task not found
     if task is None:
         abort(404, f"Task id {task_id} doesn't exist.")
 
     db = get_db()
 
+    # Check that the user is allowed to access the task    
     requester_id = db.execute(
         "SELECT requester_id FROM requester WHERE user_id = ?", (g.user["user_id"],)
     ).fetchone()["requester_id"]
@@ -102,60 +203,6 @@ def get_task(task_id, check_author=True):
         abort(403)
 
     return task
-
-
-def get_slot_count(region):
-    """
-    Manages and retrieves the slot count for a given region.
-    Decrements slots based on 30-minute intervals since last update.
-    Resets slots daily to default values (25 for region 1, 15 for region 2).
-    """
-    db = get_db()
-    now = datetime.now(timezone.utc)
-
-    row = db.execute(
-        "SELECT slots_left, last_updated FROM slots WHERE region = ?", (region,)
-    ).fetchone()
-
-    if row is None:
-        default_slots = 25 if region == 1 else 15
-        db.execute(
-            "INSERT INTO slots (region, slots_left, last_updated) VALUES (?, ?, ?)",
-            (region, default_slots, datetime.now(timezone.utc)),
-        )
-        db.commit()
-        return default_slots
-
-    slots_left = row["slots_left"]
-    last_updated = row["last_updated"]
-    if last_updated is not None and last_updated.tzinfo is None:
-        last_updated = last_updated.replace(tzinfo=timezone.utc)
-
-    if now.date() != last_updated.date():
-        slots_left = 25 if region == 1 else 15
-        db.execute(
-            "UPDATE slots SET slots_left = ?, last_updated = ? WHERE region = ?",
-            (slots_left, now, region),
-        )
-        db.commit()
-        return slots_left
-
-    # Calculate how many 30-minute intervals have passed
-    interval_minutes = 30
-
-    delta_minutes = (now - last_updated).total_seconds() // 60
-    decrements = int(delta_minutes // interval_minutes)
-
-    if decrements > 0:
-        slots_left = max(0, slots_left - decrements)
-        db.execute(
-            "UPDATE slots SET slots_left = ?, last_updated = ? WHERE region = ?",
-            (slots_left, now, region),
-        )
-        db.commit()
-        print(f"Decremented slots by {decrements}.")
-
-    return slots_left
 
 
 @bp.route("/")
@@ -279,7 +326,7 @@ def submit():
                     project_number,
                     requester_id,
                     1,
-                ),  # certifier_id=1 for now
+                ),  # certifier_id=1 for default certifier
             )
             db.execute(
                 "UPDATE slots SET slots_left = slots_left - 1, last_updated = ? WHERE region = ?",

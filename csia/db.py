@@ -8,6 +8,10 @@ from werkzeug.security import generate_password_hash
 
 
 def get_db():
+    """
+    Opens a new database connection if there is none yet.
+    Used in many functions in the program to access the database. 
+    """
     if "db" not in g:
         g.db = sqlite3.connect(
             current_app.config["DATABASE"], detect_types=sqlite3.PARSE_DECLTYPES
@@ -18,6 +22,9 @@ def get_db():
 
 
 def close_db(e=None):
+    """
+    Closes the database connection.
+    """
     db = g.pop("db", None)
 
     if db is not None:
@@ -30,9 +37,11 @@ def init_db():
     """
     db = get_db()
 
+    # Runs schema to create tables
     with current_app.open_resource("schema.sql") as f:
         db.executescript(f.read().decode("utf8"))
 
+    # Certifier user creation
     db.execute(
         "INSERT INTO user (name, password) VALUES (?, ?)",
         ("certifier1", generate_password_hash("certifier1password")),
