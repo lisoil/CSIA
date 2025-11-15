@@ -7,6 +7,7 @@ from flask import current_app, g
 from werkzeug.security import generate_password_hash
 
 
+# Boilerplate database connection code
 def get_db():
     """
     Opens a new database connection if there is none yet.

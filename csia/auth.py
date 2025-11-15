@@ -31,6 +31,8 @@ def register():
         db = get_db()
         error = None
 
+        # Errors checking that all fields are filled in
+        # Prevents empty entries in database which may cause issues since fields are listed as NOT NULL
         if not name:
             error = "Name is required."
         elif not password:
@@ -41,11 +43,11 @@ def register():
             error = "Location is required."
 
         if error is None:
-            try:
+            try: # Catch a database integrity error if username already exists
                 # Insert into user table
                 db.execute(
                     "INSERT INTO user (name, password) VALUES (?, ?)",
-                    (name, generate_password_hash(password)),
+                    (name, generate_password_hash(password)), # Hash the password for security
                 )
                 # Get the user_id of the newly inserted user
                 user_id = db.execute(
@@ -82,7 +84,7 @@ def login():
 
         if user is None:
             error = "Name not found."
-        elif not check_password_hash(user["password"], password):
+        elif not check_password_hash(user["password"], password): # Verify hashed password, not plain text for security
             error = "Incorrect password."
 
         if error is None:

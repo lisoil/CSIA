@@ -27,13 +27,52 @@ def check_if_certifier():
     db = get_db()
 
     is_certifier = (
-        db.execute(
+        db.execute( # db.execute allows program to access database by executing SQL queries
             "SELECT 1 FROM certifier WHERE user_id = ?", (g.user["user_id"],)
         ).fetchone()
         is not None
     )
 
     return is_certifier
+
+
+def get_region(user_id):
+    """
+    Retrieves the region of a user by their user ID.
+    Returns 0 for certifiers, or the requester's region.
+    """
+    db = get_db()
+    region = 0
+
+    is_certifier = db.execute(
+        "SELECT 1 FROM certifier WHERE user_id = ?", (user_id,)
+    ).fetchone() is not None
+
+    if not is_certifier:
+        region = db.execute(
+            """
+            SELECT region
+            FROM requester
+            WHERE user_id = ?
+            """,
+            (user_id,),
+        ).fetchone()["region"]
+
+    return region
+
+
+def get_user_region():
+    """
+    Retrieves the region of the current user.
+    """
+    user_id = g.user["user_id"]
+    region = 0
+
+    if not check_if_certifier():
+        region = get_region(user_id)
+
+    return region
+
 
 def check_slots_exist(region):
     """
@@ -56,27 +95,6 @@ def check_slots_exist(region):
         )
         db.commit()
         return default_slots
-
-
-def get_user_region():
-    """
-    Retrieves the region of the current user.
-    Returns 0 for certifiers, or the requester's region.
-    """
-    db = get_db()
-    region = 0
-
-    if not check_if_certifier():
-        region = db.execute(
-            """
-            SELECT region
-            FROM requester
-            WHERE user_id = ?
-            """,
-            (g.user["user_id"],),
-        ).fetchone()["region"]
-
-    return region
 
     
 def get_last_updated(region):
@@ -119,6 +137,7 @@ def update_slots_count(region, slots_left):
     # Calculate how many 30-minute intervals have passed, if the date is the same 
     interval_minutes = 30
 
+    # Calculate time difference in minutes since last update
     delta_minutes = (now - last_updated).total_seconds() // 60
     decrements = int(delta_minutes // interval_minutes)
 
@@ -130,7 +149,7 @@ def update_slots_count(region, slots_left):
             (slots_left, now, region),
         )
         db.commit()
-        print(f"Decremented slots by {decrements}.")
+        print(f"Decremented slots by {decrements}.") # Debugging statement
 
     return slots_left
 
@@ -206,7 +225,7 @@ def get_task(task_id, check_author=True):
 
 
 @bp.route("/")
-@login_required
+@login_required # Ensures user is logged in to access this route, redirects to login page (see auth.py)
 def index():
     """
     Displays a list of tasks.  Certifiers see all tasks; requesters see only their own.
@@ -219,7 +238,7 @@ def index():
     region = get_user_region()
 
     if is_certifier:
-        # Certifier gets all tasks
+        # Certifier gets all tasks, including all active and today's inactive (completed or rejected) tasks
         tasks = db.execute(
             """
             SELECT t.*, r.user_id AS requester_id, ru.name AS requester_name, r.region
@@ -240,7 +259,7 @@ def index():
             """
         ).fetchall()
     else:
-        # Requester only gets their own tasks
+        # Requester only gets their own tasks that are active or sumbitted today
         tasks = db.execute(
             """
             SELECT t.*, r.user_id AS requester_id, ru.name AS requester_name, r.region
@@ -285,40 +304,47 @@ def submit():
     db = get_db()
     region = get_user_region()
     slots_left = get_slot_count(region)
+
     print(f"Slots left: {slots_left} in Region {region}")
 
+    # If no slots left, prevent GET and POST submissions (submitting a task)
     if request.method == "GET" and slots_left <= 0:
         flash(f"No available slots in Region {region} left.")
-        return redirect(url_for("tasks.index"))
+        return redirect(url_for("tasks.index")) # Redirects back to index page instead of displaying 
 
-    if request.method == "POST":
+    if request.method == "POST": # For the form submission
         task_name = request.form["task_name"]
         description = request.form["description"]
         project_number = request.form["project_number"]
+
         error = None
 
-        if slots_left <= 0:
+        # Errors are listed in the order the user should encounter them
+        if slots_left <= 0: # No slots left in the region
             error = f"Sorry, no available slots in Region {region} left."
+        # This error will not be reached if the GET request check is working correctly
 
-        if not task_name:
-            error = "Task name is required."
+        if not task_name: # Task name is required because the database lists it as NOT NULL
+            error = "Task name is required." 
+        # This error will not be reached if the HTML form validation is working correctly
 
-        if error is not None:
+        if error is not None: # There were errors, flash them and redirect back to index page
             flash(error)
             return redirect(url_for("tasks.index"))
-        else:
+        else: # No errors in the form, proceed to attempt insert the task into the database
             requester_row = db.execute(
                 "SELECT requester_id FROM requester WHERE user_id = ?",
                 (g.user["user_id"],),
             ).fetchone()
 
-            if requester_row is None:
+            if requester_row is None: 
                 flash("Requester profile not found.")
                 return redirect(url_for("tasks.index"))
+            # This error should not be reached if the authentication system is working correctly, but is included for safety and database integrity
 
             requester_id = requester_row["requester_id"]
 
-            db.execute(
+            db.execute( # Insert the new task into the database
                 "INSERT INTO tasks (task_name, description, project_number, requester_id, certifier_id) VALUES (?, ?, ?, ?, ?)",
                 (
                     task_name,
@@ -328,14 +354,14 @@ def submit():
                     1,
                 ),  # certifier_id=1 for default certifier
             )
-            db.execute(
+            db.execute( # Decrement the slot count for the requester's region
                 "UPDATE slots SET slots_left = slots_left - 1, last_updated = ? WHERE region = ?",
                 (datetime.now(timezone.utc), region),
             )
             db.commit()
             return redirect(url_for("tasks.index"))
 
-    return render_template("tasks/submit.html")
+    return render_template("tasks/submit.html") 
 
 
 @bp.route("/<int:task_id>/update", methods=("GET", "POST"))
@@ -347,12 +373,14 @@ def update(task_id):
     """
     task = get_task(task_id)
 
+    # Check if the task is rejected, if so, handle reactivation
     rejected = task["status"] == "rejected"
 
-    if request.method == "POST":
+    if request.method == "POST": # Display same form as submit, but pre-filled with existing task data
         task_name = request.form["task_name"]
         description = request.form["description"]
         project_number = request.form["project_number"]
+
         error = None
 
         if not task_name:
@@ -367,25 +395,25 @@ def update(task_id):
                 (task_name, description, project_number, task_id),
             )
 
+            # If the task was rejected, reactivate it and decrement slots
             if rejected:
-                db.execute(
+                db.execute( # Reactivate the task
                     "UPDATE tasks SET status = 'active', time_rejected = NULL WHERE task_id = ?",
                     (task_id,),
                 )
 
-                region = db.execute(
-                    "SELECT region FROM requester WHERE requester_id = ?",
-                    (task["requester_id"],),
-                ).fetchone()["region"]
+                region = get_region(task["requester_id"])
+
                 db.execute(
                     "UPDATE slots SET slots_left = slots_left - 1, last_updated = ? WHERE region = ?",
                     (datetime.now(timezone.utc), region),
                 )
 
             db.commit()
+            print("From update: Task updated successfully.") # Debugging statement
             return redirect(url_for("tasks.index"))
 
-    return render_template("tasks/update.html", task=task, rejected=rejected)
+    return render_template("tasks/update.html", task=task, rejected=rejected) # Pass rejected status to template to change form text
 
 
 @bp.route("/<int:task_id>/delete", methods=("POST",))
@@ -463,6 +491,7 @@ def reactivate_task(task_id):
     """
     Reactivates a rejected or completed task by updating its status as 'active' in the database.
     Decrements the slot count for the requester's region.
+    Used by the certifier to reactivate tasks.
     """
     db = get_db()
 
@@ -502,6 +531,7 @@ def reactivate_task(task_id):
 
     db.commit()
     # flash("Task reactivated.")
+    print("From reactivate_task: Task reactivated successfully.")  # Debugging statement
     return redirect(url_for("tasks.index"))
 
 
@@ -533,7 +563,9 @@ def update_slots(region, action):
 @login_required
 def get_slots(region):
     """
-    Retrieves the current slot count for a given region.
+    Retrieves the current slot count for a given region. 
+    Used for Javascript requests to update slot counts dynamically as a Flask route.
+    Returns the slot count as JSON.
     """
     slots_left = get_slot_count(region)
     return jsonify({"slots_left": slots_left})

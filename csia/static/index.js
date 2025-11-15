@@ -1,3 +1,6 @@
+// csia/static/index.js used in index.html
+
+// Function to update slots via POST request
 async function updateSlots(region, action) {
     const response = await fetch(`/slots/${region}/${action}`, {
         method: 'POST'
@@ -6,6 +9,7 @@ async function updateSlots(region, action) {
     document.getElementById(`region${region}-slots-left`).textContent = data.slots_left;
 }
 
+// Function to refresh slots via GET request
 async function refreshSlots(region) {
     const response = await fetch(`/slots/${region}/get`);
     const data = await response.json();
