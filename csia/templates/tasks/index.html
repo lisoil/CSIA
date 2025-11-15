@@ -1,6 +1,6 @@
 {% extends 'base.html' %}
 
-{% block nav_title %} // determine if the user is a requester or certifier, if so display region as part of heading text
+{% block nav_title %} // determine if the user is a requester or certifier, display region as part of heading text
     | 
     {% if region > 0 %}Region {{region}}
     {% else %}Certifier
