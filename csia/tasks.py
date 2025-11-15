@@ -611,5 +611,5 @@ def add_certifier():
         ).fetchone()["user_id"]
         db.execute("INSERT INTO certifier (user_id) VALUES (?)", (user_id,))
         db.commit()
-        return "✅ Certifier created."
+        return "Certifier created."
     return "Certifier already exists."
