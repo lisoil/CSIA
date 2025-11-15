@@ -364,7 +364,7 @@ def submit():
     return render_template("tasks/submit.html") 
 
 
-@bp.route("/<int:task_id>/update", methods=("GET", "POST"))
+@bp.route("/<int:task_id>/update", methods=("GET", "POST")) # GET method allows user to view from with current task data, POST method allows user to submit updated data
 @login_required
 def update(task_id):
     """
