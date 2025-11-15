@@ -60,12 +60,12 @@ def register():
                     (user_id, region, location),
                 )
                 db.commit()
-            except db.IntegrityError:
+            except db.IntegrityError: # User name already exists
                 error = f"User {name} is already registered."
             else:
                 return redirect(url_for("auth.login"))
 
-        flash(error)
+        flash(error) # Show error message if any
 
     return render_template("auth/register.html")
 
