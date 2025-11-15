@@ -44,7 +44,8 @@ def init_db():
 
     # Certifier user creation
     # Insert a default certifier user into the database    
-    # New certifiers can be added using "add-certifier" route in this prototype application, but is not a full implementation
+    # New certifiers can be added using "add-certifier" route in this prototype 
+    # application, but is not a full implementation
     db.execute(
         "INSERT INTO user (name, password) VALUES (?, ?)",
         ("certifier1", generate_password_hash("certifier1password")),
