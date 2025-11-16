@@ -1,6 +1,6 @@
 {% extends 'base.html' %}
 
-{% block nav_title %} // determine if the user is a requester or certifier, display region as part of heading text
+{% block nav_title %} {# determine if the user is a requester or certifier, display region as part of heading text #}
     | 
     {% if region > 0 %}Region {{region}}
     {% else %}Certifier
@@ -18,7 +18,7 @@
 
 {% block content %}
     {% if is_certifier %}
-        <h1 class="region-tasks-label">Region 1 Tasks</h1>
+        <h1 class="region-tasks-label">Region 1 Tasks</h1> {# display tasks grouped by region for certifier users by including task_card.html for each task in the respective region using Jinja logic #}
         {% for task in tasks if task['region'] == 1 %}
             {% include 'task_card.html' %}
         {% endfor %}
